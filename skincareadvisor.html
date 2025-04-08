@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fully Updated Skincare Advisor</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa, #f0f4c3);
+            color: #2d3748;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        #app {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        #app:hover {
+            transform: translateY(-5px);
+        }
+
+        #header {
+            background: linear-gradient(to right, #81c784, #4caf50);
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 4px solid #388e3c;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        #chat-container {
+            padding: 25px;
+            height: 450px;
+            overflow-y: auto;
+            background: #f9fafb;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        #chat-messages {
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .bot {
+            background: linear-gradient(to right, #e3f2fd, #bbdefb);
+            border-left: 5px solid #1976d2;
+        }
+
+        .user {
+            background: linear-gradient(to left, #c8e6c9, #a5d6a7);
+            border-right: 5px solid #388e3c;
+            text-align: right;
+        }
+
+        #input-container {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        #user-input:focus {
+            border-color: #81c784;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(to right, #81c784, #4caf50);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: transform 0.2s ease, background 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(to right, #66bb6a, #388e3c);
+            transform: scale(1.05);
+        }
+
+        button.secondary {
+            background: linear-gradient(to right, #ff80ab, #f06292);
+        }
+
+        button.secondary:hover {
+            background: linear-gradient(to right, #ff4081, #d81b60);
+        }
+
+        #quiz-container {
+            display: none;
+            padding: 25px;
+            background: #fff5f7;
+        }
+
+        .quiz-step {
+            margin-bottom: 25px;
+            background: #fefcbf;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .quiz-step label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #424242;
+            font-size: 1.1rem;
+        }
+
+        .quiz-step select, .quiz-step input[type="checkbox"], .quiz-step input[type="radio"] {
+            margin-right: 10px;
+            accent-color: #81c784;
+        }
+
+        #dashboard {
+            display: none;
+            padding: 25px;
+            background: #fff5f7;
+        }
+
+        .dashboard-item {
+            margin: 15px 0;
+            padding: 20px;
+            background: linear-gradient(to right, #e0f7fa, #b2ebf2);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .product-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            background: #f9f9f9;
+            transition: transform 0.2s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-link {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .product-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 4px solid rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            border-top-color: #4caf50;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .progress-container {
+            width: 100%;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: linear-gradient(to right, #81c784, #4caf50);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        #education-hub {
+            display: none;
+            padding: 25px;
+            background: #e8f5e9;
+        }
+
+        .education-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .faq-section {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 2px dashed #e2e8f0;
+        }
+
+        @media (max-width: 600px) {
+            #app {
+                border-radius: 10px;
+            }
+            #chat-container {
+                height: 350px;
+            }
+            #header {
+                font-size: 1.2rem;
+                padding: 15px;
+            }
+            button {
+                padding: 10px 20px;
+            }
+            .quiz-step label {
+                font-size: 1rem;
+            }
+            .message {
+                padding: 10px;
+            }
+            #input-container {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <h1>GlowGuide Skincare Advisor</h1>
+        </div>
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <div id="input-container">
+                <input type="text" id="user-input" placeholder="Type 'quiz' to start...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+        <div id="quiz-container">
+            <h2>Skin Assessment Quiz</h2>
+            <div class="progress-container">
+                <div class="progress-bar" id="quiz-progress"></div>
+            </div>
+            <div class="quiz-step" id="step1">
+                <label>Skin Type:</label>
+                <select id="skin-type">
+                    <option value="">Select...</option>
+                    <option value="oily">Oily</option>
+                    <option value="dry">Dry</option>
+                    <option value="combination">Combination</option>
+                    <option value="normal">Normal</option>
+                    <option value="sensitive">Sensitive</option>
+                </select>
+            </div>
+            <div class="quiz-step" id="step2" style="display:none;">
+                <label>Concerns (select all that apply):</label>
+                <input type="checkbox" id="acne" value="acne"> Acne
+                <input type="checkbox" id="dark_spots" value="dark_spots"> Dark Spots
+                <input type="checkbox" id="wrinkles" value="wrinkles"> Wrinkles
+                <input type="checkbox" id="redness" value="redness"> Redness
+                <input type="checkbox" id="dryness" value="dryness"> Dryness
+            </div>
+            <div class="quiz-step" id="step3" style="display:none;">
+                <label>Age Range:</label>
+                <select id="age-range">
+                    <option value="">Select...</option>
+                    <option value="under_20">Under 20</option>
+                    <option value="20_30">20-30</option>
+                    <option value="30_40">30-40</option>
+                    <option value="over_40">Over 40</option>
+                </select>
+            </div>
+            <div class="quiz-step" id="step4" style="display:none;">
+                <label>Climate You Live In:</label>
+                <input type="radio" id="humid" name="climate" value="humid"> Humid
+                <input type="radio" id="dry" name="climate" value="dry"> Dry
+                <input type="radio" id="temperate" name="climate" value="temperate"> Temperate
+            </div>
+            <div class="quiz-step" id="step5" style="display:none;">
+                <label>Lifestyle Factors:</label>
+                <input type="checkbox" id="good_sleep" value="good_sleep"> Good Sleep (7-8 hrs)
+                <input type="checkbox" id="water_intake" value="water_intake"> High Water Intake
+                <input type="checkbox" id="sun_exposure" value="sun_exposure"> High Sun Exposure
+                <input type="checkbox" id="balanced_diet" value="balanced_diet"> Balanced Diet
+            </div>
+            <div class="quiz-step" id="step6" style="display:none;">
+                <label>Product Preferences (optional):</label>
+                <input type="checkbox" id="fragrance_free" value="fragrance_free"> Fragrance-Free
+                <input type="checkbox" id="vegan" value="vegan"> Vegan
+                <input type="checkbox" id="cruelty_free" value="cruelty_free"> Cruelty-Free
+            </div>
+            <div class="quiz-step" id="step7" style="display:none;">
+                <label>Optional Photo Upload:</label>
+                <input type="file" id="skin-photo" accept="image/*">
+                <p><small>Privacy Notice: Photos are processed locally and not stored. Enable this feature with AI analysis in future updates.</small></p>
+                <label>Current Routine (optional):</label>
+                <input type="checkbox" id="cleanser" value="cleanser"> Cleanser
+                <input type="checkbox" id="moisturizer" value="moisturizer"> Moisturizer
+                <input type="checkbox" id="sunscreen" value="sunscreen"> Sunscreen
+                <input type="checkbox" id="toner" value="toner"> Toner
+                <input type="checkbox" id="eye_cream" value="eye_cream"> Eye Cream
+            </div>
+            <div id="quiz-nav">
+                <button onclick="prevQuizStep()" id="prev-btn" style="display:none;">Previous</button>
+                <button onclick="nextQuizStep()" id="next-btn">Next</button>
+                <button onclick="submitQuiz()" id="submit-btn" style="display:none;">Submit Quiz</button>
+            </div>
+        </div>
+        <div id="dashboard">
+            <h2>Your Skincare Dashboard</h2>
+            <div id="dashboard-content"></div>
+            <div id="dashboard-actions">
+                <button onclick="saveRoutine()">Save Routine</button>
+                <button onclick="emailRoutine()">Email Routine</button>
+                <button onclick="backToChat()" class="secondary">Back to Chat</button>
+            </div>
+        </div>
+        <div id="education-hub">
+            <h2>Skin Education Hub</h2>
+            <div class="education-section">
+                <h3>Building a Skincare Routine</h3>
+                <p>Start with a cleanser, follow with a toner (optional), add a treatment (e.g., serum), moisturize, and finish with sunscreen in the morning.</p>
+            </div>
+            <div class="education-section">
+                <h3>Ingredient Spotlight</h3>
+                <p>Learn about key ingredients: <a href="#" onclick="askIngredient('niacinamide')">Niacinamide</a>, <a href="#" onclick="askIngredient('retinol')">Retinol</a>.</p>
+            </div>
+            <div class="education-section">
+                <h3>Myth Busting</h3>
+                <p><b>Do I really need toner?</b> Not always—it’s optional but can help balance skin pH and prep for other products.</p>
+            </div>
+            <button onclick="showChat()">Back to Chat</button>
+        </div>
+    </div>
+
+    <script type="text/python" id="py-script">
+import asyncio
+import re
+from js import document
+
+SKIN_TYPES = ["oily", "dry", "combination", "normal", "sensitive"]
+CONCERNS = ["acne", "dark_spots", "wrinkles", "redness", "dryness"]
+PRODUCT_TYPES = ["cleanser", "moisturizer", "serum", "sunscreen", "treatment"]
+LIFESTYLE_FACTORS = ["good_sleep", "water_intake", "sun_exposure", "balanced_diet"]
+PREFERENCES = ["fragrance_free", "vegan", "cruelty_free"]
+
+PRODUCTS_DB = {
+    "oily": {
+        "acne": {
+            "cleanser": {"name": "La Roche-Posay Effaclar Gel", "price": 14.99, "link": "https://www.laroche-posay.us/effaclar-purifying-foaming-gel-3337872419009.html", "review": ["Cleanses oily, acne-prone skin effectively", "Controls excess oil", "Gentle formula", "Targets acne bacteria"]},
+            "moisturizer": {"name": "Neutrogena Hydro Boost Gel", "price": 19.99, "link": "https://www.neutrogena.com/hydro-boost-gel-cream", "review": ["Lightweight hydration", "Oil-free", "Non-comedogenic", "Soothes acne-prone skin"]},
+            "serum": {"name": "The Ordinary Niacinamide 10%", "price": 7.20, "link": "https://theordinary.deciem.com/product/rdn-niacinamide-10pct-zinc-1pct-30ml", "review": ["Controls oil", "Reduces acne", "Minimizes pores", "Brightens skin"]},
+            "sunscreen": {"name": "Supergoop! Matte Screen SPF 40", "price": 38.00, "link": "https://supergoop.com/products/mattescreen-spf-40", "review": ["Matte finish", "Oil-free", "Broad-spectrum", "Lightweight"]},
+            "treatment": {"name": "The Ordinary Salicylic Acid 2%", "price": 6.50, "link": "https://theordinary.deciem.com/product/rdn-salicylic-acid-2pct-solution-30ml", "review": ["Exfoliates pores", "Clears acne", "Reduces inflammation", "Light texture"]}
+        },
+        "dark_spots": {
+            "cleanser": {"name": "CeraVe Foaming Cleanser", "price": 14.99, "link": "https://www.cerave.com/cleanser/foaming-facial-cleanser", "review": ["Gentle cleansing", "Oil control", "Non-irritating", "Preps skin"]},
+            "moisturizer": {"name": "Kiehl’s Ultra Facial Cream", "price": 32.00, "link": "https://www.kiehls.com/ultra-facial-cream", "review": ["Hydrates without oil", "Lightweight", "Supports barrier", "Brightens"]},
+            "serum": {"name": "SkinCeuticals C E Ferulic", "price": 166.00, "link": "https://www.skinceuticals.com/c-e-ferulic-635494263008.html", "review": ["Fades dark spots", "Antioxidant protection", "Brightens", "Firms skin"]},
+            "sunscreen": {"name": "EltaMD UV Clear SPF 46", "price": 39.00, "link": "https://eltamd.com/products/uv-clear-broad-spectrum-spf-46", "review": ["Lightweight", "Oil-free", "Calms skin", "Prevents spots"]},
+            "treatment": {"name": "The Ordinary Alpha Arbutin 2%", "price": 10.00, "link": "https://theordinary.deciem.com/product/rdn-alpha-arbutin-2pct-ha-30ml", "review": ["Fades dark spots", "Evens tone", "Hydrating", "Gentle"]}
+        },
+        "wrinkles": {
+            "cleanser": {"name": "La Roche-Posay Toleriane Cleanser", "price": 14.99, "link": "https://www.laroche-posay.us/toleriane-hydrating-gentle-cleanser-3337875586276.html", "review": ["Gentle cleanse", "Non-drying", "Soothes skin", "Preps for anti-aging"]},
+            "moisturizer": {"name": "Olay Regenerist Micro-Sculpting Cream", "price": 25.99, "link": "https://olay.com/en-us/product/micro-sculpting-cream", "review": ["Reduces wrinkles", "Hydrates", "Firms skin", "Light texture"]},
+            "serum": {"name": "The Ordinary Retinol 1%", "price": 8.10, "link": "https://theordinary.deciem.com/product/rdn-retinol-1pct-in-squalane-30ml", "review": ["Reduces wrinkles", "Improves texture", "Firms skin", "Non-irritating"]},
+            "sunscreen": {"name": "Neutrogena Age Shield SPF 70", "price": 12.99, "link": "https://www.neutrogena.com/sun/age-shield-face-sunscreen", "review": ["Anti-aging", "High SPF", "Lightweight", "Non-greasy"]},
+            "treatment": {"name": "RoC Retinol Correxion", "price": 29.99, "link": "https://www.rocskincare.com/retinol-correxion-line-smoothing-night-serum", "review": ["Smooths wrinkles", "Boosts collagen", "Firms skin", "Gentle"]}
+        },
+        "redness": {
+            "cleanser": {"name": "Avene Antirougeurs Cleanser", "price": 24.00, "link": "https://www.eau-thermale-avene.com/en_US/product/antirougeurs-cleansing-milk", "review": ["Calms redness", "Gentle", "Hydrates", "Soothes skin"]},
+            "moisturizer": {"name": "La Roche-Posay Rosaliac", "price": 29.99, "link": "https://www.laroche-posay.us/rosaliac-ar-intense-3337872414011.html", "review": ["Reduces redness", "Hydrates", "Soothes", "Lightweight"]},
+            "serum": {"name": "Paula's Choice Niacinamide Booster", "price": 44.00, "link": "https://www.paulaschoice.com/10-niacinamide-booster/777.html", "review": ["Calms redness", "Strengthens barrier", "Hydrates", "Evens tone"]},
+            "sunscreen": {"name": "EltaMD UV Clear SPF 46", "price": 39.00, "link": "https://eltamd.com/products/uv-clear-broad-spectrum-spf-46", "review": ["Calms redness", "Lightweight", "Oil-free", "Protects"]},
+            "treatment": {"name": "Dr. Jart+ Cicapair Cream", "price": 48.00, "link": "https://www.drjart.com/cicapair-tiger-grass-color-correcting-treatment-spf-30", "review": ["Reduces redness", "Soothes", "Hydrates", "Repairs"]}
+        },
+        "dryness": {
+            "cleanser": {"name": "CeraVe Foaming Cleanser", "price": 14.99, "link": "https://www.cerave.com/cleanser/foaming-facial-cleanser", "review": ["Gentle cleansing", "Oil control", "Non-drying", "Hydrates"]},
+            "moisturizer": {"name": "Neutrogena Hydro Boost Gel", "price": 19.99, "link": "https://www.neutrogena.com/hydro-boost-gel-cream", "review": ["Deep hydration", "Oil-free", "Non-comedogenic", "Lightweight"]},
+            "serum": {"name": "The Ordinary Hyaluronic Acid 2%", "price": 7.70, "link": "https://theordinary.deciem.com/product/rdn-hyaluronic-acid-2pct-b5-30ml", "review": ["Hydrates deeply", "Plumps skin", "Light texture", "Soothes"]},
+            "sunscreen": {"name": "Supergoop! Matte Screen SPF 40", "price": 38.00, "link": "https://supergoop.com/products/mattescreen-spf-40", "review": ["Matte finish", "Hydrates", "Broad-spectrum", "Light"]},
+            "treatment": {"name": "Laneige Water Sleeping Mask", "price": 29.00, "link": "https://us.laneige.com/products/water-sleeping-mask", "review": ["Overnight hydration", "Soothes", "Restores", "Light"]}
+        }
+    },
+    "dry": {
+        "acne": {
+            "cleanser": {"name": "CeraVe Hydrating Cleanser", "price": 14.99, "link": "https://www.cerave.com/cleanser/hydrating-facial-cleanser", "review": ["Gentle cleanse", "Hydrates", "Non-foaming", "Soothes"]},
+            "moisturizer": {"name": "CeraVe Moisturizing Cream", "price": 17.99, "link": "https://www.cerave.com/moisturizer/moisturizing-cream", "review": ["Rich hydration", "Repairs barrier", "Non-comedogenic", "Calms"]},
+            "serum": {"name": "The Ordinary Niacinamide 10%", "price": 7.20, "link": "https://theordinary.deciem.com/product/rdn-niacinamide-10pct-zinc-1pct-30ml", "review": ["Controls acne", "Hydrates", "Reduces redness", "Brightens"]},
+            "sunscreen": {"name": "EltaMD UV Daily SPF 40", "price": 33.00, "link": "https://eltamd.com/products/uv-daily-broad-spectrum-spf-40", "review": ["Hydrating", "Broad-spectrum", "Lightweight", "Non-greasy"]},
+            "treatment": {"name": "Differin Gel", "price": 14.99, "link": "https://differin.com/shop/differin-gel", "review": ["Treats acne", "Gentle on dry skin", "Improves texture", "Effective"]}
+        },
+        "dark_spots": {
+            "cleanser": {"name": "Cetaphil Gentle Cleanser", "price": 12.99, "link": "https://www.cetaphil.com/us/cleanser/gentle-skin-cleanser", "review": ["Gentle cleanse", "Hydrates", "Non-irritating", "Preps skin"]},
+            "moisturizer": {"name": "First Aid Beauty Ultra Repair Cream", "price": 36.00, "link": "https://www.firstaidbeauty.com/ultra-repair-cream", "review": ["Deep hydration", "Soothes", "Repairs barrier", "Brightens"]},
+            "serum": {"name": "SkinCeuticals Discoloration Defense", "price": 98.00, "link": "https://www.skinceuticals.com/discoloration-defense-3606000483248.html", "review": ["Fades dark spots", "Evens tone", "Hydrates", "Brightens"]},
+            "sunscreen": {"name": "La Roche-Posay Anthelios SPF 50", "price": 35.99, "link": "https://www.laroche-posay.us/anthelios-melt-in-milk-sunscreen-spf-60-3337875588782.html", "review": ["Hydrating", "High SPF", "Non-greasy", "Protects"]},
+            "treatment": {"name": "The Ordinary Alpha Arbutin 2%", "price": 10.00, "link": "https://theordinary.deciem.com/product/rdn-alpha-arbutin-2pct-ha-30ml", "review": ["Fades dark spots", "Hydrates", "Evens tone", "Gentle"]}
+        },
+        "wrinkles": {
+            "cleanser": {"name": "CeraVe Hydrating Cleanser", "price": 14.99, "link": "https://www.cerave.com/cleanser/hydrating-facial-cleanser", "review": ["Gentle cleanse", "Hydrates", "Non-irritating", "Preps skin"]},
+            "moisturizer": {"name": "Olay Regenerist Micro-Sculpting Cream", "price": 25.99, "link": "https://olay.com/en-us/product/micro-sculpting-cream", "review": ["Reduces wrinkles", "Hydrates", "Firms", "Rich texture"]},
+            "serum": {"name": "The Ordinary Retinol 1%", "price": 8.10, "link": "https://theordinary.deciem.com/product/rdn-retinol-1pct-in-squalane-30ml", "review": ["Reduces wrinkles", "Firms", "Improves texture", "Hydrates"]},
+            "sunscreen": {"name": "EltaMD UV Daily SPF 40", "price": 33.00, "link": "https://eltamd.com/products/uv-daily-broad-spectrum-spf-40", "review": ["Hydrating", "Anti-aging", "Lightweight", "Protects"]},
+            "treatment": {"name": "RoC Retinol Correxion", "price": 29.99, "link": "https://www.rocskincare.com/retinol-correxion-line-smoothing-night-serum", "review": ["Smooths wrinkles", "Hydrates", "Firms", "Gentle"]}
+        },
+        "redness": {
+            "cleanser": {"name": "Avene Antirougeurs Cleanser", "price": 24.00, "link": "https://www.eau-thermale-avene.com/en_US/product/antirougeurs-cleansing-milk", "review": ["Calms redness", "Hydrates", "Gentle", "Soothes"]},
+            "moisturizer": {"name": "CeraVe Moisturizing Cream", "price": 17.99, "link": "https://www.cerave.com/moisturizer/moisturizing-cream", "review": ["Reduces redness", "Hydrates deeply", "Repairs barrier", "Soothes"]},
+            "serum": {"name": "Dr. Jart+ Cicapair Serum", "price": 48.00, "link": "https://www.drjart.com/cicapair-serum", "review": ["Calms redness", "Hydrates", "Repairs", "Light texture"]},
+            "sunscreen": {"name": "La Roche-Posay Anthelios SPF 50", "price": 35.99, "link": "https://www.laroche-posay.us/anthelios-melt-in-milk-sunscreen-spf-60-3337875588782.html", "review": ["Calms redness", "Hydrating", "High SPF", "Non-greasy"]},
+            "treatment": {"name": "The Ordinary Azelaic Acid", "price": 7.90, "link": "https://theordinary.deciem.com/product/rdn-azelaic-acid-suspension-10pct-30ml", "review": ["Reduces redness", "Soothes", "Evens tone", "Hydrates"]}
+        },
+        "dryness": {
+            "cleanser": {"name": "Cetaphil Gentle Cleanser", "price": 12.99, "link": "https://www.cetaphil.com/us/cleanser/gentle-skin-cleanser", "review": ["Gentle cleanse", "Hydrates", "Non-irritating", "Soothes"]},
+            "moisturizer": {"name": "First Aid Beauty Ultra Repair Cream", "price": 36.00, "link": "https://www.firstaidbeauty.com/ultra-repair-cream", "review": ["Deep hydration", "Repairs barrier", "Soothes", "Rich"]},
+            "serum": {"name": "The Ordinary Hyaluronic Acid 2%", "price": 7.70, "link": "https://theordinary.deciem.com/product/rdn-hyaluronic-acid-2pct-b5-30ml", "review": ["Hydrates deeply", "Plumps", "Soothes", "Light"]},
+            "sunscreen": {"name": "EltaMD UV Daily SPF 40", "price": 33.00, "link": "https://eltamd.com/products/uv-daily-broad-spectrum-spf-40", "review": ["Hydrating", "Broad-spectrum", "Lightweight", "Protects"]},
+            "treatment": {"name": "Laneige Water Sleeping Mask", "price": 29.00, "link": "https://us.laneige.com/products/water-sleeping-mask", "review": ["Overnight hydration", "Restores", "Soothes", "Rich"]}
+        }
+    },
+    "combination": {
+        "acne": {
+            "cleanser": {"name": "La Roche-Posay Effaclar Gel", "price": 14.99, "link": "https://www.laroche-posay.us/effaclar-purifying-foaming-gel-3337872419009.html", "review": ["Controls oil", "Gentle cleanse", "Targets acne", "Non-drying"]},
+            "moisturizer": {"name": "Neutrogena Hydro Boost Gel", "price": 19.99, "link": "https://www.neutrogena.com/hydro-boost-gel-cream", "review": ["Light hydration", "Oil-free", "Non-comedogenic", "Soothes"]},
+            "serum": {"name": "The Ordinary Niacinamide 10%", "price": 7.20, "link": "https://theordinary.deciem.com/product/rdn-niacinamide-10pct-zinc-1pct-30ml", "review": ["Controls oil", "Reduces acne", "Hydrates dry areas", "Brightens"]},
+            "sunscreen": {"name": "Supergoop! Matte Screen SPF 40", "price": 38.00, "link": "https://supergoop.com/products/mattescreen-spf-40", "review": ["Matte finish", "Hydrates", "Broad-spectrum", "Light"]},
+            "treatment": {"name": "The Ordinary Salicylic Acid 2%", "price": 6.50, "link": "https://theordinary.deciem.com/product/rdn-salicylic-acid-2pct-solution-30ml", "review": ["Clears acne", "Exfoliates", "Reduces oil", "Gentle"]}
+        },
+        "dark_spots": {
+            "cleanser": {"name": "CeraVe Foaming Cleanser", "price": 14.99, "link": "https://www.cerave.com/cleanser/foaming-facial-cleanser", "review": ["Balances oil", "Gentle", "Hydrates dry areas", "Preps skin"]},
+            "moisturizer": {"name": "Kiehl’s Ultra Facial Cream", "price": 32.00, "link": "https://www.kiehls.com/ultra-facial-cream", "review": ["Hydrates dry zones", "Light on oily areas", "Brightens", "Soothes"]},
+            "serum": {"name": "SkinCeuticals C E Ferulic", "price": 166.00, "link": "https://www.skinceuticals.com/c-e-ferulic-635494263008.html", "review": ["Fades dark spots", "Brightens", "Hydrates", "Protects"]},
+            "sunscreen": {"name": "EltaMD UV Clear SPF 46", "price": 39.00, "link": "https://eltamd.com/products/uv-clear-broad-spectrum-spf-46", "review": ["Lightweight", "Hydrates", "Controls oil", "Prevents spots"]},
+            "treatment": {"name": "The Ordinary Alpha Arbutin 2%", "price": 10.00, "link": "https://theordinary.deciem.com/product/rdn-alpha-arbutin-2pct-ha-30ml", "review": ["Fades dark spots", "Evens tone", "Hydrates", "Light"]}
+        },
+        "wrinkles": {
+            "cleanser": {"name": "La Roche-Posay Toleriane Cleanser", "price": 14.99, "link": "https://www.laroche-posay.us/toleriane-hydrating-gentle-cleanser-3337875586276.html", "review": ["Gentle cleanse", "Hydrates dry areas", "Non-drying", "Preps skin"]},
+            "moisturizer": {"name": "Olay Regenerist Micro-Sculpting Cream", "price": 25.99, "link": "https://olay.com/en-us/product/micro-sculpting-cream", "review": ["Firms skin", "Hydrates dry zones", "Reduces wrinkles", "Light"]},
+            "serum": {"name": "The Ordinary Retinol 1%", "price": 8.10, "link": "https://theordinary.deciem.com/product/rdn-retinol-1pct-in-squalane-30ml", "review": ["Reduces wrinkles", "Firms", "Hydrates", "Improves texture"]},
+            "sunscreen": {"name": "Neutrogena Age Shield SPF 70", "price": 12.99, "link": "https://www.neutrogena.com/sun/age-shield-face-sunscreen", "review": ["Anti-aging", "Hydrates", "Light on oily areas", "Protects"]},
+            "treatment": {"name": "RoC Retinol Correxion", "price": 29.99, "link": "https://www.rocskincare.com/retinol-correxion-line-smoothing-night-serum", "review": ["Smooths wrinkles", "Hydrates", "Firms", "Gentle"]}
+        },
+        "redness": {
+            "cleanser": {"name": "Avene Antirougeurs Cleanser", "price": 24.00, "link": "https://www.eau-thermale-avene.com/en_US/product/antirougeurs-cleansing-milk", "review": ["Calms redness", "Hydrates dry zones", "Gentle", "Soothes"]},
+            "moisturizer": {"name": "La Roche-Posay Rosaliac", "price": 29.99, "link": "https://www.laroche-posay.us/rosaliac-ar-intense-3337872414011.html", "review": ["Reduces redness", "Hydrates", "Soothes oily areas", "Light"]},
+            "serum": {"name": "Paula's Choice Niacinamide Booster", "price": 44.00, "link": "https://www.paulaschoice.com/10-niacinamide-booster/777.html", "review": ["Calms redness", "Hydrates", "Controls oil", "Evens tone"]},
+            "sunscreen": {"name": "EltaMD UV Clear SPF 46", "price": 39.00, "link": "https://eltamd.com/products/uv-clear-broad-spectrum-spf-46", "review": ["Calms redness", "Hydrates", "Lightweight", "Protects"]},
+            "treatment": {"name": "Dr. Jart+ Cicapair Cream", "price": 48.00, "link": "https://www.drjart.com/cicapair-tiger-grass-color-correcting-treatment-spf-30", "review": ["Reduces redness", "Soothes", "Hydrates", "Repairs"]}
+        },
+        "dryness": {
+            "cleanser": {"name": "CeraVe Hydrating Cleanser", "price": 14.99, "link": "https://www.cerave.com/cleanser/hydrating-facial-cleanser", "review": ["Hydrates dry areas", "Gentle on oily zones", "Non-irritating", "Soothes"]},
+            "moisturizer": {"name": "Neutrogena Hydro Boost Gel", "price": 19.99, "link": "https://www.neutrogena.com/hydro-boost-gel-cream", "review": ["Hydrates dry zones", "Light on oily areas", "Non-comedogenic", "Soothes"]},
+            "serum": {"name": "The Ordinary Hyaluronic Acid 2%", "price": 7.70, "link": "https://theordinary.deciem.com/product/rdn-hyaluronic-acid-2pct-b5-30ml", "review": ["Hydrates deeply", "Balances oil", "Plumps", "Light"]},
+            "sunscreen": {"name": "EltaMD UV Daily SPF 40", "price": 33.00, "link": "https://eltamd.com/products/uv-daily-broad-spectrum-spf-40", "review": ["Hydrates dry areas", "Light on oily zones", "Broad-spectrum", "Protects"]},
+            "treatment": {"name": "Laneige Water Sleeping Mask", "price": 29.00, "link": "https://us.laneige.com/products/water-sleeping-mask", "review": ["Overnight hydration", "Soothes", "Restores", "Light"]}
+        }
+    },
+    "normal": {
+        "acne": {
+            "cleanser": {"name": "CeraVe Foaming Cleanser", "price": 14.99, "link": "https://www.cerave.com/cleanser/foaming-facial-cleanser", "review": ["Gentle cleanse", "Controls oil", "Non-drying", "Targets acne"]},
+            "moisturizer": {"name": "Neutrogena Hydro Boost Gel", "price": 19.99, "link": "https://www.neutrogena.com/hydro-boost-gel-cream", "review": ["Light hydration", "Non-comedogenic", "Soothes", "Maintains balance"]},
+            "serum": {"name": "The Ordinary Niacinamide 10%", "price": 7.20, "link": "https://theordinary.deciem.com/product/rdn-niacinamide-10pct-zinc-1pct-30ml", "review": ["Reduces acne", "Brightens", "Hydrates", "Balances skin"]},
+            "sunscreen": {"name": "Supergoop! Unseen Sunscreen SPF 40", "price": 36.00, "link": "https://supergoop.com/products/unseen-sunscreen-spf-40", "review": ["Invisible finish", "Broad-spectrum", "Lightweight", "Protects"]},
+            "treatment": {"name": "The Ordinary Salicylic Acid 2%", "price": 6.50, "link": "https://theordinary.deciem.com/product/rdn-salicylic-acid-2pct-solution-30ml", "review": ["Clears acne", "Exfoliates", "Gentle", "Reduces inflammation"]}
+        },
+        "dark_spots": {
+            "cleanser": {"name": "Cetaphil Gentle Cleanser", "price": 12.99, "link": "https://www.cetaphil.com/us/cleanser/gentle-skin-cleanser", "review": ["Gentle cleanse", "Non-irritating", "Hydrates", "Preps skin"]},
+            "moisturizer": {"name": "Kiehl’s Ultra Facial Cream", "price": 32.00, "link": "https://www.kiehls.com/ultra-facial-cream", "review": ["Hydrates", "Brightens", "Lightweight", "Soothes"]},
+            "serum": {"name": "SkinCeuticals C E Ferulic", "price": 166.00, "link": "https://www.skinceuticals.com/c-e-ferulic-635494263008.html", "review": ["Fades dark spots", "Brightens", "Protects", "Hydrates"]},
+            "sunscreen": {"name": "La Roche-Posay Anthelios SPF 50", "price": 35.99, "link": "https://www.laroche-posay.us/anthelios-melt-in-milk-sunscreen-spf-60-3337875588782.html", "review": ["High SPF", "Lightweight", "Hydrates", "Prevents spots"]},
+            "treatment": {"name": "The Ordinary Alpha Arbutin 2%", "price": 10.00, "link": "https://theordinary.deciem.com/product/rdn-alpha-arbutin-2pct-ha-30ml", "review": ["Fades dark spots", "Evens tone", "Hydrates", "Gentle"]}
+        },
+        "wrinkles": {
+            "cleanser": {"name": "La Roche-Posay Toleriane Cleanser", "price": 14.99, "link": "https://www.laroche-posay.us/toleriane-hydrating-gentle-cleanser-3337875586276.html", "review": ["Gentle cleanse", "Hydrates", "Non-irritating", "Preps skin"]},
+            "moisturizer": {"name": "Olay Regenerist Micro-Sculpting Cream", "price": 25.99, "link": "https://olay.com/en-us/product/micro-sculpting-cream", "review": ["Reduces wrinkles", "Hydrates", "Firms", "Light texture"]},
+            "serum": {"name": "The Ordinary Retinol 1%", "price": 8.10, "link": "https://theordinary.deciem.com/product/rdn-retinol-1pct-in-squalane-30ml", "review": ["Reduces wrinkles", "Firms", "Improves texture", "Hydrates"]},
+            "sunscreen": {"name": "Neutrogena Age Shield SPF 70", "price": 12.99, "link": "https://www.neutrogena.com/sun/age-shield-face-sunscreen", "review": ["Anti-aging", "High SPF", "Lightweight", "Protects"]},
+            "treatment": {"name": "RoC Retinol Correxion", "price": 29.99, "link": "https://www.rocskincare.com/retinol-correxion-line-smoothing-night-serum", "review": ["Smooths wrinkles", "Firms", "Hydrates", "Gentle"]}
+        },
+        "redness": {
+            "cleanser": {"name": "Avene Antirougeurs Cleanser", "price": 24.00, "link": "https://www.eau-thermale-avene.com/en_US/product/antirougeurs-cleansing-milk", "review": ["Calms redness", "Gentle", "Hydrates", "Soothes"]},
+            "moisturizer": {"name": "La Roche-Posay Rosaliac", "price": 29.99, "link": "https://www.laroche-posay.us/rosaliac-ar-intense-3337872414011.html", "review": ["Reduces redness", "Hydrates", "Soothes", "Lightweight"]},
+            "serum": {"name": "Paula's Choice Niacinamide Booster", "price": 44.00, "link": "https://www.paulaschoice.com/10-niacinamide-booster/777.html", "review": ["Calms redness", "Hydrates", "Evens tone", "Light"]},
+            "sunscreen": {"name": "EltaMD UV Clear SPF 46", "price": 39.00, "link": "https://eltamd.com/products/uv-clear-broad-spectrum-spf-46", "review": ["Calms redness", "Lightweight", "Hydrates", "Protects"]},
+            "treatment": {"name": "Dr. Jart+ Cicapair Cream", "price": 48.00, "link": "https://www.drjart.com/cicapair-tiger-grass-color-correcting-treatment-spf-30", "review": ["Reduces redness", "Soothes", "Hydrates", "Repairs"]}
+        },
+        "dryness": {
+            "cleanser": {"name": "CeraVe Hydrating Cleanser", "price": 14.99, "link": "https://www.cerave.com/cleanser/hydrating-facial-cleanser", "review": ["Gentle cleanse", "Hydrates", "Non-irritating", "Soothes"]},
+            "moisturizer": {"name": "Neutrogena Hydro Boost Gel", "price": 19.99, "link": "https://www.neutrogena.com/hydro-boost-gel-cream", "review": ["Light hydration", "Non-comedogenic", "Soothes", "Maintains balance"]},
+            "serum": {"name": "The Ordinary Hyaluronic Acid 2%", "price": 7.70, "link": "https://theordinary.deciem.com/product/rdn-hyaluronic-acid-2pct-b5-30ml", "review": ["Hydrates deeply", "Plumps", "Soothes", "Light"]},
+            "sunscreen": {"name": "Supergoop! Unseen Sunscreen SPF 40", "price": 36.00, "link": "https://supergoop.com/products/unseen-sunscreen-spf-40", "review": ["Invisible finish", "Hydrates", "Broad-spectrum", "Light"]},
+            "treatment": {"name": "Laneige Water Sleeping Mask", "price": 29.00, "link": "https://us.laneige.com/products/water-sleeping-mask", "review": ["Overnight hydration", "Restores", "Soothes", "Light"]}
+        }
+    },
+    "sensitive": {
+        "acne": {
+            "cleanser": {"name": "Avene Extremely Gentle Cleanser", "price": 24.00, "link": "https://www.eau-thermale-avene.com/en_US/product/extremely-gentle-cleanser-lotion", "review": ["Soothes sensitive skin", "Gentle cleanse", "Non-irritating", "Targets acne"]},
+            "moisturizer": {"name": "CeraVe PM Moisturizer", "price": 14.99, "link": "https://www.cerave.com/moisturizer/pm-facial-moisturizing-lotion", "review": ["Calms skin", "Hydrates", "Non-comedogenic", "Gentle"]},
+            "serum": {"name": "The Ordinary Niacinamide 10%", "price": 7.20, "link": "https://theordinary.deciem.com/product/rdn-niacinamide-10pct-zinc-1pct-30ml", "review": ["Reduces acne", "Soothes", "Hydrates", "Gentle"]},
+            "sunscreen": {"name": "EltaMD UV Clear SPF 46", "price": 39.00, "link": "https://eltamd.com/products/uv-clear-broad-spectrum-spf-46", "review": ["Calms skin", "Lightweight", "Broad-spectrum", "Non-irritating"]},
+            "treatment": {"name": "Avene Cicalfate Cream", "price": 28.00, "link": "https://www.eau-thermale-avene.com/en_US/product/cicalfate-restorative-skin-cream", "review": ["Repairs acne", "Soothes", "Gentle", "Heals"]}
+        },
+        "dark_spots": {
+            "cleanser": {"name": "Cetaphil Gentle Cleanser", "price": 12.99, "link": "https://www.cetaphil.com/us/cleanser/gentle-skin-cleanser", "review": ["Gentle cleanse", "Non-irritating", "Soothes", "Preps skin"]},
+            "moisturizer": {"name": "La Roche-Posay Toleriane Double Repair", "price": 19.99, "link": "https://www.laroche-posay.us/toleriane-double-repair-face-moisturizer-3337875586337.html", "review": ["Hydrates", "Soothes", "Repairs barrier", "Gentle"]},
+            "serum": {"name": "SkinCeuticals Discoloration Defense", "price": 98.00, "link": "https://www.skinceuticals.com/discoloration-defense-3606000483248.html", "review": ["Fades dark spots", "Gentle", "Hydrates", "Brightens"]},
+            "sunscreen": {"name": "La Roche-Posay Anthelios SPF 50", "price": 35.99, "link": "https://www.laroche-posay.us/anthelios-melt-in-milk-sunscreen-spf-60-3337875588782.html", "review": ["Non-irritating", "Hydrates", "High SPF", "Protects"]},
+            "treatment": {"name": "The Ordinary Alpha Arbutin 2%", "price": 10.00, "link": "https://theordinary.deciem.com/product/rdn-alpha-arbutin-2pct-ha-30ml", "review": ["Fades dark spots", "Soothes", "Hydrates", "Gentle"]}
+        },
+        "wrinkles": {
+            "cleanser": {"name": "Avene Extremely Gentle Cleanser", "price": 24.00, "link": "https://www.eau-thermale-avene.com/en_US/product/extremely-gentle-cleanser-lotion", "review": ["Gentle cleanse", "Soothes", "Non-irritating", "Preps skin"]},
+            "moisturizer": {"name": "CeraVe PM Moisturizer", "price": 14.99, "link": "https://www.cerave.com/moisturizer/pm-facial-moisturizing-lotion", "review": ["Hydrates", "Soothes", "Firms", "Gentle"]},
+            "serum": {"name": "The Ordinary Retinol 0.5%", "price": 7.80, "link": "https://theordinary.deciem.com/product/rdn-retinol-0-5pct-in-squalane-30ml", "review": ["Reduces wrinkles", "Gentle", "Hydrates", "Firms"]},
+            "sunscreen": {"name": "EltaMD UV Daily SPF 40", "price": 33.00, "link": "https://eltamd.com/products/uv-daily-broad-spectrum-spf-40", "review": ["Hydrates", "Non-irritating", "Anti-aging", "Protects"]},
+            "treatment": {"name": "Avene Retrinal 0.1", "price": 72.00, "link": "https://www.eau-thermale-avene.com/en_US/product/retrinal-01-intensive-cream", "review": ["Smooths wrinkles", "Gentle", "Hydrates", "Firms"]}
+        },
+        "redness": {
+            "cleanser": {"name": "Avene Antirougeurs Cleanser", "price": 24.00, "link": "https://www.eau-thermale-avene.com/en_US/product/antirougeurs-cleansing-milk", "review": ["Calms redness", "Gentle", "Soothes", "Hydrates"]},
+            "moisturizer": {"name": "La Roche-Posay Toleriane Double Repair", "price": 19.99, "link": "https://www.laroche-posay.us/toleriane-double-repair-face-moisturizer-3337875586337.html", "review": ["Reduces redness", "Hydrates", "Soothes", "Gentle"]},
+            "serum": {"name": "Dr. Jart+ Cicapair Serum", "price": 48.00, "link": "https://www.drjart.com/cicapair-serum", "review": ["Calms redness", "Hydrates", "Repairs", "Gentle"]},
+            "sunscreen": {"name": "EltaMD UV Clear SPF 46", "price": 39.00, "link": "https://eltamd.com/products/uv-clear-broad-spectrum-spf-46", "review": ["Calms redness", "Lightweight", "Non-irritating", "Protects"]},
+            "treatment": {"name": "Avene Cicalfate Cream", "price": 28.00, "link": "https://www.eau-thermale-avene.com/en_US/product/cicalfate-restorative-skin-cream", "review": ["Reduces redness", "Soothes", "Repairs", "Gentle"]}
+        },
+        "dryness": {
+            "cleanser": {"name": "Cetaphil Gentle Cleanser", "price": 12.99, "link": "https://www.cetaphil.com/us/cleanser/gentle-skin-cleanser", "review": ["Gentle cleanse", "Soothes", "Hydrates", "Non-irritating"]},
+            "moisturizer": {"name": "CeraVe Moisturizing Cream", "price": 17.99, "link": "https://www.cerave.com/moisturizer/moisturizing-cream", "review": ["Deep hydration", "Soothes", "Repairs barrier", "Gentle"]},
+            "serum": {"name": "The Ordinary Hyaluronic Acid 2%", "price": 7.70, "link": "https://theordinary.deciem.com/product/rdn-hyaluronic-acid-2pct-b5-30ml", "review": ["Hydrates deeply", "Soothes", "Plumps", "Gentle"]},
+            "sunscreen": {"name": "La Roche-Posay Anthelios SPF 50", "price": 35.99, "link": "https://www.laroche-posay.us/anthelios-melt-in-milk-sunscreen-spf-60-3337875588782.html", "review": ["Hydrates", "Non-irritating", "Broad-spectrum", "Protects"]},
+            "treatment": {"name": "Avene Cicalfate Cream", "price": 28.00, "link": "https://www.eau-thermale-avene.com/en_US/product/cicalfate-restorative-skin-cream", "review": ["Restores moisture", "Soothes", "Repairs", "Gentle"]}
+        }
+    }
+}
+
+INGREDIENT_INFO = {
+    "niacinamide": "Reduces inflammation and redness, improves skin barrier function by increasing ceramide production.",
+    "retinol": "Stimulates collagen production, increases cell turnover to reduce signs of aging and acne.",
+    "hyaluronic acid": "Attracts and retains moisture in the skin, providing hydration without greasiness.",
+    "salicylic acid": "Beta-hydroxy acid that exfoliates and unclogs pores, particularly effective for acne treatment.",
+    "ceramides": "Lipids that help form the skin's barrier and help skin retain moisture.",
+    "vitamin c": "Antioxidant that brightens skin, reduces pigmentation, and boosts collagen production."
+}
+
+SEASONAL_TIPS = {
+    "winter": {
+        "dry": "Switch to richer moisturizers with ceramides and oils. Use humidifiers indoors.",
+        "oily": "Don't skip moisturizer - use gel-based formulas. Look for hydrating ingredients like hyaluronic acid.",
+        "all": "Protect skin from windburn with scarves. Consider using overnight masks for extra hydration."
+    },
+    "summer": {
+        "all": "Increase SPF protection (SPF 30+) and reapply every 2 hours. Look for water-resistant formulas.",
+        "oily": "Use oil-free sunscreens with matte finish. Carry blotting papers for excess oil.",
+        "dry": "Don't forget to moisturize even in humidity. Look for lightweight, hydrating formulas."
+    }
+}
+
+class FullyUpdatedSkincareAdvisor:
+    def __init__(self):
+        self.user_profile = {
+            "skin_type": None, 
+            "concerns": [], 
+            "age_range": None, 
+            "climate": None, 
+            "lifestyle": [], 
+            "preferences": [], 
+            "current_routine": [],
+            "photo": None
+        }
+        self.conversation_state = "greeting"
+        self.current_step = 1
+
+    async def process_input(self, user_input):
+        user_input = user_input.lower().strip()
+        
+        if self.conversation_state == "greeting":
+            self.conversation_state = "welcome"
+            return "Hi! I’m your personal Skin Advisor. Let’s get glowing ✨ Type 'quiz' to start your personalized skincare journey."
+        
+        elif user_input == "quiz":
+            self.conversation_state = "quiz"
+            return "Please complete the quiz above to get your full skincare recommendations!"
+        
+        elif self.conversation_state == "quiz_done":
+            self.conversation_state = "recommend"
+            return await self.generate_full_routine()
+
+        elif self.conversation_state == "recommend":
+            if any(pt in user_input for pt in PRODUCT_TYPES):
+                product_type = next(pt for pt in PRODUCT_TYPES if pt in user_input)
+                return await self.get_detailed_recommendation(product_type)
+            
+            elif "morning" in user_input or "night" in user_input:
+                routines = await self.get_morning_night_routine()
+                time = "morning" if "morning" in user_input else "night"
+                return f"<h3>{time.capitalize()} Routine:</h3>" + "\n".join(routines[time])
+            
+            elif any(ing in user_input for ing in INGREDIENT_INFO.keys()):
+                ingredient = next(ing for ing in INGREDIENT_INFO.keys() if ing in user_input)
+                return await self.explain_ingredient(ingredient)
+            
+            elif "season" in user_input or "winter" in user_input or "summer" in user_input:
+                season = "winter" if "winter" in user_input else "summer"
+                return await self.get_seasonal_advice(season)
+            
+            elif "dashboard" in user_input:
+                return await self.generate_dashboard()
+            
+            elif "restart" in user_input:
+                self.__init__()
+                return "Restarted! Type 'quiz' to begin again!"
+            
+            elif "skincare tips" in user_input:
+                return await self.get_skincare_tips()
+            
+            elif "product comparisons" in user_input:
+                return await self.get_product_comparisons()
+            
+            elif "customize routine" in user_input:
+                return await self.customize_routine()
+            
+            elif "image analysis" in user_input:
+                return "Please upload an image in the quiz (optional feature). Full AI analysis coming soon!"
+            
+            elif "lifestyle advice" in user_input:
+                return await self.get_lifestyle_advice()
+            
+            elif "share experience" in user_input:
+                return "Please share your skincare experience (e.g., what worked or didn’t). Type your response, and I’ll tailor advice!"
+            
+            elif "community insights" in user_input:
+                return "Explore community insights: Users recommend consistent sunscreen and gentle cleansers. Ask me more!"
+            
+            elif "education" in user_input:
+                return "Visit the Skin Education Hub below for tips and guides!"
+            
+            elif "feedback" in user_input:
+                return "Was this advice helpful? Type 'yes' or 'no' to let me know!"
+            
+            return ("<p><b>Next options:</b> 'morning routine', 'night routine', 'dashboard', 'restart', 'skincare tips', " +
+                   "'product comparisons', 'customize routine', 'image analysis', 'lifestyle advice', 'share experience', " +
+                   "'community insights', 'education', 'feedback', or a product type (e.g., 'serum')</p>")
+
+        return "Not sure what you mean. Type 'quiz' to start!"
+
+    async def process_quiz(self, skin_type, concerns, age_range, climate, lifestyle, preferences, current_routine, photo):
+        self.user_profile["skin_type"] = skin_type
+        self.user_profile["concerns"] = concerns if concerns else ["default"]
+        self.user_profile["age_range"] = age_range if age_range else None
+        self.user_profile["climate"] = climate if climate else None
+        self.user_profile["lifestyle"] = lifestyle if lifestyle else []
+        self.user_profile["preferences"] = preferences if preferences else []
+        self.user_profile["current_routine"] = current_routine if current_routine else []
+        self.user_profile["photo"] = photo  # Will be None if no file uploaded
+        self.conversation_state = "quiz_done"
+        return "Quiz submitted! Generating your full skincare routine..."
+
+    async def get_detailed_recommendation(self, product_type):
+        skin_type = self.user_profile["skin_type"]
+        concerns = self.user_profile["concerns"]
+        preferences = self.user_profile["preferences"]
+        
+        rec = f"<div class='product-card'><h3>{product_type.capitalize()} Recommendation</h3>"
+        rec += f"<p><b>Skin Type:</b> {skin_type.capitalize()}<br>"
+        rec += f"<b>Concerns:</b> {', '.join(concerns).capitalize()}</p>"
+        matched = False
+        
+        for concern in concerns:
+            if (skin_type in PRODUCTS_DB and concern in PRODUCTS_DB[skin_type] and 
+                product_type in PRODUCTS_DB[skin_type][concern]):
+                product = PRODUCTS_DB[skin_type][concern][product_type]
+                rec += f"<p><b>Product:</b> <a href='{product['link']}' class='product-link' target='_blank'>{product['name']}</a><br>"
+                rec += f"<b>Price:</b> ${product['price']}</p>"
+                rec += "<p><b>Key Benefits:</b><ul>"
+                for point in product["review"]:
+                    rec += f"<li>{point}</li>"
+                rec += "</ul></p>"
+                if any(pref in product.get("features", []) for pref in preferences):
+                    rec += "<p><b>Matches Preferences:</b> Yes</p>"
+                matched = True
+                break
+        
+        if not matched:
+            rec += f"<p>No specific {product_type} available for your profile. Try another type!</p>"
+        
+        return rec + "</div>"
+
+    async def generate_full_routine(self):
+        skin_type = self.user_profile["skin_type"]
+        concerns = self.user_profile["concerns"]
+        routine = ["<h3>Your Personalized Skincare Routine</h3>"]
+        routine.append(f"<p><b>Skin Type:</b> {skin_type.capitalize()}<br>")
+        routine.append(f"<b>Primary Concerns:</b> {', '.join(concerns).capitalize()}</p>")
+        
+        routine.append("<h4>Recommended Products:</h4>")
+        for product_type in PRODUCT_TYPES:
+            rec = await self.get_detailed_recommendation(product_type)
+            routine.append(rec)
+        
+        routine.append("<p><b>Disclaimer:</b> This is not a medical diagnosis. Consult a dermatologist for serious concerns.</p>")
+        routine.append("<p><b>Next options:</b> 'morning routine', 'night routine', 'dashboard', 'restart', 'skincare tips', " +
+                      "'product comparisons', 'customize routine', 'image analysis', 'lifestyle advice', 'share experience', " +
+                      "'community insights', 'education', 'feedback', or a product type (e.g., 'serum')</p>")
+        
+        self.conversation_state = "recommend"
+        return "\n".join(routine)
+
+    async def get_morning_night_routine(self):
+        morning = ["cleanser", "moisturizer", "sunscreen"]
+        night = ["cleanser", "treatment", "moisturizer"]
+        routines = {
+            "morning": [await self.get_detailed_recommendation(pt) for pt in morning],
+            "night": [await self.get_detailed_recommendation(pt) for pt in night]
+        }
+        return routines
+
+    async def explain_ingredient(self, ingredient):
+        return f"<div class='product-card'><h3>{ingredient.capitalize()}</h3><p>{INGREDIENT_INFO.get(ingredient.lower(), 'No information available')}</p></div>"
+
+    async def get_seasonal_advice(self, season):
+        skin_type = self.user_profile["skin_type"]
+        tips = [f"<h3>{season.capitalize()} Skincare Tips</h3>"]
+        
+        if season in SEASONAL_TIPS:
+            if "all" in SEASONAL_TIPS[season]:
+                tips.append(f"<p><b>For all skin types:</b> {SEASONAL_TIPS[season]['all']}</p>")
+            if skin_type in SEASONAL_TIPS[season]:
+                tips.append(f"<p><b>For {skin_type} skin:</b> {SEASONAL_TIPS[season][skin_type]}</p>")
+        
+        return "\n".join(tips) if len(tips) > 1 else "<p>No specific seasonal tips available for your skin type.</p>"
+
+    async def get_skincare_tips(self):
+        skin_type = self.user_profile["skin_type"]
+        tips = [f"<h3>Skincare Tips for {skin_type.capitalize()} Skin</h3><ul>"]
+        tips.append("<li>Cleanse twice daily to remove excess oil or impurities</li>")
+        tips.append("<li>Use a lightweight, non-comedogenic moisturizer</li>")
+        tips.append("<li>Apply sunscreen daily, even indoors</li>")
+        tips.append("<li>Avoid harsh scrubs to prevent irritation</li>")
+        tips.append("<li>Stay hydrated and eat a balanced diet</li>")
+        tips.append("</ul>")
+        return "\n".join(tips)
+
+    async def get_product_comparisons(self):
+        skin_type = self.user_profile["skin_type"]
+        comparisons = [f"<h3>Product Comparisons for {skin_type.capitalize()} Skin</h3>"]
+        comparisons.append("<ul>")
+        comparisons.append("<li><b>La Roche-Posay Effaclar Gel</b> vs. <b>CeraVe Hydrating Cleanser</b>: Effaclar is better for oily skin, while CeraVe suits dry skin.</li>")
+        comparisons.append("<li><b>The Ordinary Salicylic Acid 2%</b> vs. <b>Differin Gel</b>: Salicylic Acid is affordable for spot treatment, Differin is stronger for long-term acne.</li>")
+        comparisons.append("</ul>")
+        return "\n".join(comparisons)
+
+    async def customize_routine(self):
+        skin_type = self.user_profile["skin_type"]
+        return (f"<h3>Customize Your Routine for {skin_type.capitalize()} Skin</h3>" +
+                "<p>To customize your routine:</p>" +
+                "<ul>" +
+                "<li>Add products by typing 'add [product type]' (e.g., 'add serum')</li>" +
+                "<li>Remove products by typing 'remove [product type]'</li>" +
+                "<li>View your current routine in the dashboard</li>" +
+                "</ul>")
+
+    async def get_lifestyle_advice(self):
+        skin_type = self.user_profile["skin_type"]
+        advice = [f"<h3>Lifestyle Advice for {skin_type.capitalize()} Skin</h3><ul>"]
+        advice.append("<li>Drink plenty of water to support skin hydration</li>")
+        advice.append("<li>Include omega-3 fatty acids (e.g., salmon) for anti-inflammatory benefits</li>")
+        advice.append("<li>Avoid excessive sugar to reduce oiliness or breakouts</li>")
+        advice.append("<li>Get 7-8 hours of sleep for skin repair</li>")
+        advice.append("<li>Manage stress through meditation or exercise as it affects skin health</li>")
+        advice.append("</ul>")
+        return "\n".join(advice)
+
+    async def generate_dashboard(self):
+        skin_type = self.user_profile["skin_type"]
+        concerns = self.user_profile["concerns"]
+        age_range = self.user_profile["age_range"]
+        climate = self.user_profile["climate"]
+        lifestyle = self.user_profile["lifestyle"]
+        preferences = self.user_profile["preferences"]
+        current_routine = self.user_profile["current_routine"]
+        
+        dashboard = [
+            "<div class='dashboard-item'>",
+            "<h3>Your Skincare Profile</h3>",
+            f"<p><b>Skin Type:</b> {skin_type.capitalize()}</p>",
+            f"<p><b>Primary Concerns:</b> {', '.join(concerns).capitalize()}</p>",
+            f"<p><b>Age Range:</b> {age_range.replace('_', '-').capitalize() if age_range else 'Not specified'}</p>",
+            f"<p><b>Climate:</b> {climate.capitalize() if climate else 'Not specified'}</p>",
+            f"<p><b>Lifestyle:</b> {', '.join(lifestyle).capitalize() if lifestyle else 'Not specified'}</p>",
+            f"<p><b>Preferences:</b> {', '.join(preferences).capitalize() if preferences else 'None'}</p>",
+            f"<p><b>Current Routine:</b> {', '.join(current_routine).capitalize() if current_routine else 'None specified'}</p>",
+            "</div>"
+        ]
+        
+        document.getElementById("dashboard-content").innerHTML = "\n".join(dashboard)
+        document.getElementById("dashboard").style.display = "block"
+        document.getElementById("chat-container").style.display = "none"
+        return "Check your dashboard above!"
+
+chatbot = FullyUpdatedSkincareAdvisor()
+    </script>
+
+    <script>
+        let pyodide;
+        let currentQuizStep = 1;
+        const totalQuizSteps = 7;
+
+        async function loadPyodideAndRun() {
+            document.getElementById("chat-messages").innerHTML = 
+                "<div class='message bot'>Loading skincare advisor... <span class='loading'></span></div>";
+            
+            try {
+                pyodide = await loadPyodide();
+                await pyodide.loadPackage("micropip");
+                await pyodide.runPythonAsync(document.getElementById("py-script").textContent);
+                
+                const initialMessage = await pyodide.globals.get("chatbot").process_input("start");
+                addMessage("bot", initialMessage);
+            } catch (error) {
+                addMessage("bot", "Failed to load skincare advisor. Please refresh the page.");
+                console.error("Pyodide loading error:", error);
+            }
+        }
+
+        function addMessage(sender, text) {
+            const messagesDiv = document.getElementById("chat-messages");
+            const messageDiv = document.createElement("div");
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = text;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("user-input");
+            const userText = input.value.trim();
+            if (!userText) return;
+
+            addMessage("user", userText);
+            input.value = "";
+
+            const loadingDiv = document.createElement("div");
+            loadingDiv.className = "message bot";
+            loadingDiv.innerHTML = "Thinking... <span class='loading'></span>";
+            document.getElementById("chat-messages").appendChild(loadingDiv);
+            
+            try {
+                const response = await pyodide.globals.get("chatbot").process_input(userText);
+                document.getElementById("chat-messages").removeChild(loadingDiv);
+                addMessage("bot", response);
+
+                if (userText === "quiz") {
+                    showQuiz();
+                } else if (userText === "education") {
+                    showEducation();
+                } else if (userText === "yes" || userText === "no") {
+                    addMessage("bot", `Thank you for your feedback! ${userText === "yes" ? "Glad to help!" : "Sorry to hear that. How can I improve?"}`);
+                }
+            } catch (error) {
+                document.getElementById("chat-messages").removeChild(loadingDiv);
+                addMessage("bot", "Sorry, I encountered an error. Please try again.");
+                console.error("Error processing message:", error);
+            }
+        }
+
+        function showQuiz() {
+            document.getElementById("chat-container").style.display = "none";
+            document.getElementById("quiz-container").style.display = "block";
+            updateQuizProgress();
+        }
+
+        function showEducation() {
+            document.getElementById("chat-container").style.display = "none";
+            document.getElementById("education-hub").style.display = "block";
+        }
+
+        function showChat() {
+            document.getElementById("education-hub").style.display = "none";
+            document.getElementById("quiz-container").style.display = "none";
+            document.getElementById("dashboard").style.display = "none";
+            document.getElementById("chat-container").style.display = "block";
+        }
+
+        function updateQuizProgress() {
+            const progress = (currentQuizStep / totalQuizSteps) * 100;
+            document.getElementById("quiz-progress").style.width = `${progress}%`;
+            
+            document.getElementById("prev-btn").style.display = currentQuizStep > 1 ? "inline-block" : "none";
+            document.getElementById("next-btn").style.display = currentQuizStep < totalQuizSteps ? "inline-block" : "none";
+            document.getElementById("submit-btn").style.display = currentQuizStep === totalQuizSteps ? "inline-block" : "none";
+            
+            for (let i = 1; i <= totalQuizSteps; i++) {
+                document.getElementById(`step${i}`).style.display = i === currentQuizStep ? "block" : "none";
+            }
+        }
+
+        function nextQuizStep() {
+            if (currentQuizStep < totalQuizSteps) {
+                currentQuizStep++;
+                updateQuizProgress();
+            }
+        }
+
+        function prevQuizStep() {
+            if (currentQuizStep > 1) {
+                currentQuizStep--;
+                updateQuizProgress();
+            }
+        }
+
+        async function submitQuiz() {
+            const skinType = document.getElementById("skin-type").value;
+            const concerns = [];
+            ["acne", "dark_spots", "wrinkles", "redness", "dryness"].forEach(concern => {
+                if (document.getElementById(concern).checked) concerns.push(concern);
+            });
+            const ageRange = document.getElementById("age-range")?.value || null;
+            const climate = document.querySelector('input[name="climate"]:checked')?.value || null;
+            const lifestyle = [];
+            ["good_sleep", "water_intake", "sun_exposure", "balanced_diet"].forEach(factor => {
+                if (document.getElementById(factor).checked) lifestyle.push(factor);
+            });
+            const preferences = [];
+            ["fragrance_free", "vegan", "cruelty_free"].forEach(pref => {
+                if (document.getElementById(pref).checked) preferences.push(pref);
+            });
+            const currentRoutine = [];
+            ["cleanser", "moisturizer", "sunscreen", "toner", "eye_cream"].forEach(item => {
+                if (document.getElementById(item).checked) currentRoutine.push(item);
+            });
+            const photo = document.getElementById("skin-photo").files[0] || null;
+
+            if (!skinType || concerns.length === 0 || !ageRange || !climate) {
+                alert("Please complete all required fields (Skin Type, Concerns, Age Range, Climate)!");
+                return;
+            }
+
+            try {
+                const chatbot = pyodide.globals.get("chatbot");
+                const quizResponse = await chatbot.process_quiz(skinType, concerns, ageRange, climate, lifestyle, preferences, currentRoutine, photo);
+                addMessage("bot", quizResponse);
+
+                const routineResponse = await chatbot.generate_full_routine();
+                addMessage("bot", routineResponse);
+
+                document.getElementById("quiz-container").style.display = "none";
+                document.getElementById("chat-container").style.display = "block";
+                currentQuizStep = 1;
+                updateQuizProgress();
+            } catch (error) {
+                addMessage("bot", "Sorry, there was an error processing your quiz. Please try again.");
+                console.error("Quiz submission error:", error);
+            }
+        }
+
+        function saveRoutine() {
+            try {
+                const routine = document.getElementById("dashboard-content").innerHTML;
+                localStorage.setItem("skincareRoutine", routine);
+                alert("Routine saved to your browser!");
+            } catch (error) {
+                alert("Failed to save routine. Please try again.");
+                console.error("Save routine error:", error);
+            }
+        }
+
+        function emailRoutine() {
+            try {
+                const routineText = document.getElementById("dashboard-content").textContent;
+                const mailto = `mailto:?subject=My Skincare Routine&body=${encodeURIComponent(routineText)}`;
+                window.location.href = mailto;
+            } catch (error) {
+                alert("Failed to prepare email. Please try again.");
+                console.error("Email routine error:", error);
+            }
+        }
+
+        function backToChat() {
+            document.getElementById("dashboard").style.display = "none";
+            document.getElementById("education-hub").style.display = "none";
+            document.getElementById("chat-container").style.display = "block";
+        }
+
+        function askIngredient(ingredient) {
+            sendMessage(ingredient);
+            showChat();
+        }
+
+        document.getElementById("user-input").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        window.addEventListener("load", () => {
+            loadPyodideAndRun();
+            
+            if (localStorage.getItem("skincareRoutine")) {
+                if (confirm("You have a saved routine. Would you like to load it?")) {
+                    document.getElementById("dashboard-content").innerHTML = localStorage.getItem("skincareRoutine");
+                    document.getElementById("chat-container").style.display = "none";
+                    document.getElementById("dashboard").style.display = "block";
+                }
+            }
+        });
+    </script>
+    <footer style="text-align: center; margin-top: 30px; padding: 20px; background: linear-gradient(to right, #e0f7fa, #f0f4c3); border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+        <p style="font-weight: 600; color: #2d3748;">Follow us: 
+            <a href="https://twitter.com/yourhandle" target="_blank" style="color: #1976d2; text-decoration: none;">Twitter</a> | 
+            <a href="https://instagram.com/yourhandle" target="_blank" style="color: #1976d2; text-decoration: none;">Instagram</a>
+        </p>
+        <p style="margin: 10px 0;">
+            <a href="mailto:subscribe@yourdomain.com" style="color: #1976d2; text-decoration: none; font-weight: 600;">Subscribe for Skincare Tips</a>
+        </p>
+        <p style="font-size: 0.9rem; color: #4a5568;">
+            <small><b>Privacy Notice:</b> Your data is processed locally and not stored unless saved by you. Photos are not currently analyzed.</small>
+        </p>
+        <p style="font-size: 0.9rem; color: #4a5568;">
+            <small><b>FAQ:</b> This AI runs in your browser using Pyodide. Type 'quiz' to start your personalized skincare journey!</small>
+        </p>
+    </footer>
+</body>
+</html>
